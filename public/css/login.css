@@ -1,0 +1,140 @@
+/* ============================================================
+   SCAEE — login.css (Login, Esqueci Senha, Nova Senha)
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --verde:   #00c16a;
+  --vdark:   #009e54;
+  --bg:      #0a0e13;
+  --card:    #111720;
+  --borda:   #1e2a38;
+  --texto:   #dde6f0;
+  --muted:   #607080;
+  --erro:    #ff5b5b;
+  --ok:      #00c16a;
+}
+
+html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--texto); }
+
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,193,106,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,193,106,.03) 1px, transparent 1px);
+  background-size: 40px 40px; pointer-events: none;
+}
+
+body::after {
+  content: ''; position: fixed;
+  bottom: -200px; left: 50%; transform: translateX(-50%);
+  width: 800px; height: 500px;
+  background: radial-gradient(ellipse, rgba(0,193,106,.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.page {
+  position: relative; z-index: 1; min-height: 100vh;
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+
+.card {
+  width: 100%; max-width: 400px;
+  background: var(--card); border: 1px solid var(--borda); border-radius: 20px;
+  padding: 44px 36px 36px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.55);
+  animation: up .45s cubic-bezier(.16,1,.3,1) both;
+}
+
+@keyframes up { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
+
+.topo { text-align: center; margin-bottom: 30px; }
+
+.badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 58px; height: 58px; border-radius: 15px;
+  background: linear-gradient(135deg, var(--vdark), var(--verde));
+  margin-bottom: 16px;
+  box-shadow: 0 6px 22px rgba(0,193,106,.28);
+}
+.badge span { font-family: 'Syne', sans-serif; font-size: 19px; font-weight: 800; color: #fff; }
+
+.topo h1 { font-family: 'Syne', sans-serif; font-size: 23px; font-weight: 800; letter-spacing: -.3px; }
+.topo p  { margin-top: 6px; font-size: 13px; color: var(--muted); line-height: 1.55; }
+
+/* Avisos */
+.aviso {
+  display: flex; align-items: center; gap: 8px;
+  border-radius: 10px; padding: 11px 14px;
+  font-size: 13px; margin-bottom: 18px;
+  animation: shake .38s ease;
+}
+.aviso-erro { background: rgba(255,91,91,.1);  border: 1px solid rgba(255,91,91,.25); color: var(--erro); }
+.aviso-ok   { background: rgba(0,193,106,.1);  border: 1px solid rgba(0,193,106,.25); color: var(--ok); }
+
+@keyframes shake {
+  0%,100%{ transform:translateX(0) }
+  20%,60%{ transform:translateX(-5px) }
+  40%,80%{ transform:translateX(5px) }
+}
+
+/* Campos */
+.campo { margin-bottom: 15px; }
+.campo label {
+  display: block; font-size: 11px; font-weight: 600;
+  color: var(--muted); margin-bottom: 7px;
+  text-transform: uppercase; letter-spacing: .5px;
+}
+
+.campo input {
+  width: 100%; height: 46px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--borda); border-radius: 10px;
+  padding: 0 44px 0 14px;
+  font-family: inherit; font-size: 14px; color: var(--texto);
+  outline: none; transition: border-color .2s, box-shadow .2s;
+}
+.campo input::placeholder { color: #3a4e60; }
+.campo input:focus {
+  border-color: var(--verde);
+  box-shadow: 0 0 0 3px rgba(0,193,106,.13);
+}
+
+.senha-wrap { position: relative; }
+.senha-wrap input { padding-right: 44px; }
+
+.senha-wrap button, .toggle-s {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); transition: color .2s; padding: 4px;
+}
+.senha-wrap button:hover, .toggle-s:hover { color: var(--texto); }
+
+/* Botão principal */
+.btn-entrar {
+  width: 100%; height: 48px; margin-top: 6px; border: none; border-radius: 10px;
+  background: linear-gradient(135deg, var(--vdark), var(--verde));
+  color: #fff; font-family: inherit; font-size: 14px; font-weight: 600;
+  letter-spacing: .5px; cursor: pointer;
+  transition: opacity .2s, transform .1s;
+  box-shadow: 0 4px 18px rgba(0,193,106,.32);
+}
+.btn-entrar:hover  { opacity: .9; }
+.btn-entrar:active { transform: scale(.98); }
+.btn-entrar:disabled { opacity: .5; cursor: not-allowed; }
+
+.link-esqueci {
+  display: block; text-align: center; margin-top: 18px;
+  font-size: 13px; color: var(--muted); text-decoration: none;
+  transition: color .2s;
+}
+.link-esqueci:hover { color: var(--verde); }
+
+.rodape {
+  text-align: center; margin-top: 28px;
+  font-size: 11px; color: #2a3a4a; letter-spacing: .5px;
+}
+
+@media (max-width: 440px) {
+  .card { padding: 36px 24px 28px; }
+}

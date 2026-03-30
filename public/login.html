@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SCAEE — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+
+      <div class="topo">
+        <div class="badge"><span>SC</span></div>
+        <h1>SCAEE</h1>
+        <p>Software de Cadastro e Armazenamento<br>de Eventos Escolares</p>
+      </div>
+
+      <div class="aviso aviso-erro" id="msg-erro" hidden></div>
+      <div class="aviso aviso-ok"   id="msg-ok"   hidden></div>
+
+      <form id="form-login" novalidate>
+        <div class="campo">
+          <label for="email">E-mail</label>
+          <input type="email" id="email" name="email"
+                 placeholder="seu@email.edu.br" autocomplete="email" required>
+        </div>
+
+        <div class="campo">
+          <label for="senha">Senha</label>
+          <div class="senha-wrap">
+            <input type="password" id="senha" name="senha"
+                   placeholder="••••••••" autocomplete="current-password" required>
+            <button type="button" id="toggle-senha" aria-label="Mostrar senha">
+              <svg id="icon-olho" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-entrar" id="btn-entrar">
+          <span id="btn-texto">ENTRAR</span>
+          <span id="btn-loader" hidden>●●●</span>
+        </button>
+
+        <a href="esqueci-senha.html" class="link-esqueci">Esqueceu a senha?</a>
+      </form>
+
+      <p class="rodape">ETEC · SCAEE v2.0</p>
+    </div>
+  </div>
+
+  <script src="js/login.js"></script>
+</body>
+</html>
