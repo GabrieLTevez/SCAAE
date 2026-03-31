@@ -131,3 +131,9 @@ scaee/
 | DELETE | /api/eventos/:id                | Gestão         | Exclui um evento           |
 | POST   | /api/recuperacao/solicitar      | Público        | Solicita redefinição       |
 | POST   | /api/recuperacao/redefinir      | Público        | Salva nova senha           |
+
+## 👨 Autor
+
+Desenvolvido por **João Gabriel Tevez** Estudante de Sistemas de Informação - UFU.
+
+[LinkedIn](https://www.linkedin.com/in/joaogabrieltevez/) | [Portfólio](https://github.com/GabrieLTevez/SCAAE)
