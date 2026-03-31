@@ -1,9 +1,41 @@
 # SCAEE — Software de Cadastro e Armazenamento de Eventos Escolares
 
+O SCAEE é uma solução Full Stack robusta desenvolvida para centralizar a gestão acadêmica de eventos. Mais do que um simples calendário, o sistema foi projetado com foco em segurança de dados, experiência do usuário (UX) e regras de negócio dinâmicas.
+
+---
+
+# Por que o SCAEE é diferente?
+Diferente de soluções genéricas, o SCAEE foi construído pensando na hierarquia de uma instituição de ensino:
+
+Controle de Acesso Granular (RBAC): Diferenciação real entre níveis de permissão (Gestão, Professor e Recepção).
+
+Segurança de Sessão: Implementação de express-session com proteção contra ataques de fixação e cabeçalhos de controle de cache para evitar vazamento de dados em máquinas públicas.
+
+Integridade de Dados: Validação no servidor (Backend) que impede que um usuário tente editar ou excluir eventos de terceiros via requisições diretas à API.
+
+---
+
 Stack: **Node.js + Express + MySQL**
 
 ---
 
+## Funcionalidades Principais
+👤 Gestão de Usuários
+Login seguro com comparação de hash.
+
+Recuperação de senha via tokens temporários.
+
+Persistência de sessão com regeneração de ID para segurança.
+
+---
+
+## Painel Administrativo
+
+Calendário Interativo: Renderização dinâmica de dias e eventos com indicadores visuais por cores (Interno, Aberto, Convidado).
+
+Gestão de Eventos: CRUD completo com interface em "Drawer" (lateral) para melhor fluxo de trabalho.
+
+Filtros em Tempo Real: Busca por nome, curso ou tipo sem necessidade de recarregar a página (Single Page Feeling).
 ## Pré-requisitos
 
 - [Node.js](https://nodejs.org) v18 ou superior
@@ -47,11 +79,9 @@ http://localhost:3000
 
 | E-mail                      | Senha  | Tipo      |
 |-----------------------------|--------|-----------|
-| gestao@escola.edu.br        | 123456 | Gestão    |
-| professor@escola.edu.br     | 123456 | Professor |
-| recepcao@escola.edu.br      | 123456 | Recepção  |
-
-> **Atenção:** troque as senhas antes de usar em produção!
+| gestao@escola.edu.br        | 123    | Gestão    |
+| professor@escola.edu.br     | 123    | Professor |
+| recepcao@escola.edu.br      | 123    | Recepção  |
 
 ---
 

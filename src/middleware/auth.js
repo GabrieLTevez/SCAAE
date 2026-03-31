@@ -4,8 +4,8 @@
 
 function requireLogin(req, res, next) {
   if (!req.session?.usuario) {
-    // Se for uma requisição de API, devolve JSON
-    if (req.path.startsWith('/api/')) {
+    // MUDANÇA AQUI: originalUrl pega a rota completa
+    if (req.originalUrl.startsWith('/api/')) {
       return res.status(401).json({ erro: 'Sessão expirada. Faça login novamente.' });
     }
     return res.redirect('/login.html');

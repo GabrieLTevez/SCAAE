@@ -1,6 +1,5 @@
 -- ============================================================
 -- SCAEE — Schema do banco de dados
--- Execute no phpMyAdmin ou terminal MySQL
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS dbscaee
@@ -12,6 +11,7 @@ CREATE TABLE IF NOT EXISTS `usuario` (
   `id`        INT UNSIGNED    NOT NULL AUTO_INCREMENT,
   `email`     VARCHAR(120)    NOT NULL,
   `senha`     VARCHAR(255)    NOT NULL,
+  `nome`     VARCHAR(100)    NOT NULL,
   `tipo`      ENUM('Gestão','Professor','Recepção') NOT NULL,
   `criado_em` DATETIME        DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS `eventos` (
   `color`      VARCHAR(10)   NOT NULL,
   `info_event` VARCHAR(500)  NOT NULL,
   `criado_por` INT UNSIGNED  NULL,
+  `criado_por_email` VARCHAR(120) NULL,
   `criado_em`  DATETIME      DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   FOREIGN KEY (`criado_por`) REFERENCES `usuario`(`id`) ON DELETE SET NULL
@@ -48,7 +49,7 @@ CREATE TABLE IF NOT EXISTS `tokens_recuperacao` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ── Usuários de exemplo (senha: 123456) ──────────────────────
-INSERT INTO `usuario` (`email`, `senha`, `tipo`) VALUES
-  ('gestao@escola.edu.br',    '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Gestão'),
-  ('professor@escola.edu.br', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Professor'),
-  ('recepcao@escola.edu.br',  '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Recepção');
+INSERT INTO `usuario` (`email`, `senha`, `nome`, `tipo`) VALUES
+  ('gestao@escola.edu.br',    '123', 'gestao', 'Gestão'),
+  ('professor@escola.edu.br', '123', 'professor', 'Professor'),
+  ('recepcao@escola.edu.br', '123', 'recpecao', 'Recepção');

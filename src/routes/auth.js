@@ -35,30 +35,23 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ erro: 'E-mail ou senha incorretos.' });
     }
 
-    // Destrói sessão antiga e cria uma nova — garante que está salva antes de responder
-    req.session.destroy(async () => {
-      req.session.regenerate((errRegen) => {
-        if (errRegen) {
-          console.error('Erro ao regenerar sessão:', errRegen);
-          return res.status(500).json({ erro: 'Erro interno.' });
-        }
+    // Associa os dados à sessão atual
+    req.session.usuario = {
+      id:    usuario.id,
+      email: email.trim(),
+      tipo:  usuario.tipo,
+      nome:  usuario.nome || '',
+    };
 
-        req.session.usuario = {
-          id:    usuario.id,
-          email: email.trim(),
-          tipo:  usuario.tipo,
-          nome:  usuario.nome || '',
-        };
-
-        // Força o salvamento da sessão antes de responder
-        req.session.save((errSave) => {
-          if (errSave) {
-            console.error('Erro ao salvar sessão:', errSave);
-            return res.status(500).json({ erro: 'Erro interno.' });
-          }
-          res.json({ sucesso: true, tipo: usuario.tipo });
-        });
-      });
+    // FORÇA a gravação da sessão na memória do servidor ANTES de responder
+    req.session.save((err) => {
+      if (err) {
+        console.error('Erro ao salvar sessão:', err);
+        return res.status(500).json({ erro: 'Erro interno ao criar sessão.' });
+      }
+      
+      // Só manda o sinal verde pro frontend depois que o cookie estiver garantido
+      res.json({ sucesso: true, tipo: usuario.tipo });
     });
 
   } catch (err) {
@@ -77,9 +70,13 @@ router.post('/logout', (req, res) => {
 
 // GET /api/sessao
 router.get('/sessao', (req, res) => {
-  if (!req.session?.usuario) {
+  // ATENÇÃO: Essa linha é vital para matar o cache maldito do navegador!
+  res.set('Cache-Control', 'no-store');
+
+  if (!req.session || !req.session.usuario) {
     return res.status(401).json({ logado: false });
   }
+  
   res.json({ logado: true, usuario: req.session.usuario });
 });
 

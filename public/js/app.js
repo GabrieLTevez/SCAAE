@@ -1,18 +1,18 @@
 // ============================================================
-// SCAEE — app.js
+// SCAEE — app.js (Versão Final com Permissões)
 // ============================================================
 
 const CORES = { Interno: '#7F1CE2', Aberto: '#00c16a', Convidado: '#4395D0' };
 
-let sessao        = null;
-let todosEventos  = [];
-let mesAtual      = new Date();
-let diaSelecionado= null;
-let filtroAtual   = 'todos';
-let viewAtual     = 'calendario'; // 'calendario' | 'gestao'
-let editandoId    = null;         // null = cadastro, número = edição
+let sessao         = null;
+let todosEventos   = [];
+let mesAtual       = new Date();
+let diaSelecionado = null;
+let filtroAtual    = 'todos';
+let viewAtual      = 'calendario'; // 'calendario' | 'gestao'
+let editandoId     = null;         // null = cadastro, número = edição
 
-// ── Init ─────────────────────────────────────────────────────
+// ── Início ───────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   await verificarSessao();
   await carregarEventos();
@@ -24,59 +24,70 @@ document.addEventListener('DOMContentLoaded', async () => {
   atualizarDataHoje();
 });
 
-// ── Sessão ───────────────────────────────────────────────────
+// ── Sessão e Permissões ──────────────────────────────────────
 async function verificarSessao() {
   try {
-    const res  = await fetch('/api/sessao');
+    const res = await fetch('/api/sessao');
     if (!res.ok) { window.location.href = '/login.html'; return; }
+    
     const data = await res.json();
     if (!data.logado) { window.location.href = '/login.html'; return; }
 
     sessao = data.usuario;
-    document.getElementById('usuario-email').textContent  = sessao.email;
-    document.getElementById('usuario-tipo').textContent   = sessao.tipo;
-    document.getElementById('usuario-nome').textContent   = sessao.nome;
-    document.getElementById('avatar-inicial').textContent = sessao.email[0].toUpperCase();
+    
+    // Atualiza elementos da UI com segurança (evita o erro de elemento nulo)
+    const elEmail  = document.getElementById('usuario-email');
+    const elNome   = document.getElementById('usuario-nome');
+    const elTipo   = document.getElementById('usuario-tipo');
+    const elAvatar = document.getElementById('avatar-inicial');
 
-    // Botão novo evento — só Gestão e Professor
-    if (['Gestão', 'Professor'].includes(sessao.tipo)) {
-      const btn = document.getElementById('btn-abrir-form');
-      btn.hidden = false;
-      btn.style.display = 'flex';
+    if (elEmail)  elEmail.textContent  = sessao.email;
+    if (elNome)   elNome.textContent   = sessao.nome;
+    if (elTipo)   elTipo.textContent   = sessao.tipo;
+    if (elAvatar) elAvatar.textContent = sessao.email[0].toUpperCase();
+
+    // Botão "Novo Evento" — Visível para Gestão e Professor
+    const btnNovo = document.getElementById('btn-abrir-form');
+    if (btnNovo && ['Gestão', 'Professor'].includes(sessao.tipo)) {
+      btnNovo.hidden = false;
+      btnNovo.style.display = 'flex';
     }
 
-    // Link gestão — só Gestão
-    if (sessao.tipo === 'Gestão') {
-      const navGestao = document.getElementById('nav-gestao');
+    // Aba "Gestão de Eventos" — Visível para Gestão e Professor
+    const navGestao = document.getElementById('nav-gestao');
+    if (navGestao && ['Gestão', 'Professor'].includes(sessao.tipo)) {
       navGestao.hidden = false;
       navGestao.style.display = 'flex';
     }
-  } catch {
+
+  } catch (erro) {
+    console.error('Erro na sessão:', erro);
     window.location.href = '/login.html';
   }
 }
 
-document.getElementById('btn-sair').addEventListener('click', async () => {
+document.getElementById('btn-sair')?.addEventListener('click', async () => {
   await fetch('/api/logout', { method: 'POST' });
   window.location.href = '/login.html';
 });
 
-// ── Carregar eventos ─────────────────────────────────────────
+// ── Busca de Dados ───────────────────────────────────────────
 async function carregarEventos() {
   try {
     const res = await fetch('/api/eventos');
     if (!res.ok) throw new Error();
     todosEventos = await res.json();
+    
     renderizarCalendario();
     renderizarPainel();
     renderizarTabela();
   } catch {
-    document.getElementById('eventos-lista').innerHTML =
-      '<div class="vazio">Erro ao carregar eventos.</div>';
+    const lista = document.getElementById('eventos-lista');
+    if (lista) lista.innerHTML = '<div class="vazio">Erro ao carregar eventos.</div>';
   }
 }
 
-// ── NAVEGAÇÃO ENTRE VIEWS ────────────────────────────────────
+// ── Navegação ────────────────────────────────────────────────
 function configurarNav() {
   document.querySelectorAll('.nav-item[data-view]').forEach(link => {
     link.addEventListener('click', (e) => {
@@ -88,30 +99,26 @@ function configurarNav() {
 
 function trocarView(view) {
   viewAtual = view;
-
-  // Atualiza nav
   document.querySelectorAll('.nav-item[data-view]').forEach(l => l.classList.remove('ativo'));
   document.querySelector(`[data-view="${view}"]`)?.classList.add('ativo');
 
-  // Mostra/esconde sections
   document.getElementById('view-calendario').hidden = (view !== 'calendario');
   document.getElementById('view-gestao').hidden      = (view !== 'gestao');
 
-  // Atualiza título do topbar
   const titulos = { calendario: 'Calendário de Eventos', gestao: 'Gestão de Eventos' };
   document.getElementById('topbar-titulo').textContent = titulos[view] ?? '';
 }
 
-// ── CALENDÁRIO ───────────────────────────────────────────────
+// ── Calendário ───────────────────────────────────────────────
 function renderizarCalendario() {
   const grid   = document.getElementById('cal-grid');
   const titulo = document.getElementById('cal-titulo');
+  if (!grid || !titulo) return;
 
   const ano = mesAtual.getFullYear();
   const mes = mesAtual.getMonth();
 
-  titulo.textContent = mesAtual.toLocaleDateString('pt-BR',
-    { month: 'long', year: 'numeric' });
+  titulo.textContent = mesAtual.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
   const primeiroDia = new Date(ano, mes, 1).getDay();
   const ultimoDia   = new Date(ano, mes + 1, 0).getDate();
@@ -147,12 +154,6 @@ function renderizarCalendario() {
     cel.addEventListener('click', () => selecionarDia(data));
     grid.appendChild(cel);
   }
-
-  const total  = primeiroDia + ultimoDia;
-  const sobram = total % 7 === 0 ? 0 : 7 - (total % 7);
-  for (let d = 1; d <= sobram; d++) {
-    grid.appendChild(criarCelula(d, new Date(ano, mes + 1, d), true));
-  }
 }
 
 function criarCelula(numero, data, outroMes) {
@@ -171,25 +172,25 @@ function selecionarDia(data) {
   renderizarPainel();
 }
 
-document.getElementById('cal-prev').addEventListener('click', () => {
+document.getElementById('cal-prev')?.addEventListener('click', () => {
   mesAtual = new Date(mesAtual.getFullYear(), mesAtual.getMonth() - 1, 1);
   renderizarCalendario();
 });
-document.getElementById('cal-next').addEventListener('click', () => {
+document.getElementById('cal-next')?.addEventListener('click', () => {
   mesAtual = new Date(mesAtual.getFullYear(), mesAtual.getMonth() + 1, 1);
   renderizarCalendario();
 });
 
-// ── PAINEL DO CALENDÁRIO ─────────────────────────────────────
+// ── Painel Lateral (Calendário) ──────────────────────────────
 function renderizarPainel() {
   const lista  = document.getElementById('eventos-lista');
   const titulo = document.getElementById('painel-titulo');
+  if (!lista) return;
 
   let eventos = todosEventos;
 
   if (diaSelecionado) {
-    titulo.textContent = diaSelecionado.toLocaleDateString('pt-BR',
-      { weekday: 'long', day: 'numeric', month: 'long' });
+    titulo.textContent = diaSelecionado.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
     eventos = getEventosNoDia(diaSelecionado);
   } else {
     titulo.textContent = 'Todos os eventos';
@@ -198,32 +199,33 @@ function renderizarPainel() {
   if (filtroAtual !== 'todos') eventos = eventos.filter(e => e.tipo === filtroAtual);
 
   if (eventos.length === 0) {
-    lista.innerHTML = diaSelecionado
-      ? '<div class="vazio">Nenhum evento neste dia.</div>'
-      : '<div class="vazio">Clique em um dia no calendário.</div>';
+    lista.innerHTML = diaSelecionado ? '<div class="vazio">Nenhum evento neste dia.</div>' : '<div class="vazio">Clique em um dia.</div>';
     return;
   }
 
-  lista.innerHTML = eventos.map((e, i) => `
-    <div class="evento-card" style="border-left-color:${CORES[e.tipo] ?? '#888'};animation-delay:${i*30}ms">
+  lista.innerHTML = eventos.map((e, i) => {
+    // REGRA DE PERMISSÃO: Dono do evento ou Gestor
+    const podeEditar = sessao?.tipo === 'Gestão' || e.criado_por_email === sessao?.email;
+
+    return `
+    <div class="evento-card" style="border-left-color:${CORES[e.tipo] ?? '#888'}; animation-delay:${i * 30}ms">
       <div class="evento-titulo">${escapar(e.titulo)}</div>
       <div class="evento-meta">
-        <span>⏰ ${e.startime.slice(0,5)} – ${e.endtime.slice(0,5)}</span>
+        <span>⏰ ${e.startime.slice(0, 5)} – ${e.endtime.slice(0, 5)}</span>
         <span>📍 ${escapar(e.local1)}</span>
         <span>👤 ${escapar(e.nome)}</span>
         <span>📚 ${escapar(e.curso)} · ${escapar(e.ano)}</span>
-        ${e.info_event ? `<span>💬 ${escapar(e.info_event)}</span>` : ''}
       </div>
-      ${sessao?.tipo === 'Gestão' ? `
+      ${podeEditar ? `
       <div class="evento-acoes">
+        <button class="btn-editar" data-id="${e.id}">✏ Editar</button>
         <button class="btn-deletar" data-id="${e.id}">✕ Excluir</button>
       </div>` : ''}
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 
-  lista.querySelectorAll('.btn-deletar').forEach(btn => {
-    btn.addEventListener('click', () => deletarEvento(Number(btn.dataset.id)));
-  });
+  lista.querySelectorAll('.btn-editar').forEach(btn => btn.addEventListener('click', () => abrirEdicao(Number(btn.dataset.id))));
+  lista.querySelectorAll('.btn-deletar').forEach(btn => btn.addEventListener('click', () => deletarEvento(Number(btn.dataset.id))));
 }
 
 function getEventosNoDia(data) {
@@ -235,7 +237,7 @@ function getEventosNoDia(data) {
   });
 }
 
-// ── FILTROS DO PAINEL ────────────────────────────────────────
+// ── Filtros ──────────────────────────────────────────────────
 function configurarFiltros() {
   document.querySelectorAll('.filtro').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -247,72 +249,67 @@ function configurarFiltros() {
   });
 }
 
-// ── TABELA DE GESTÃO ─────────────────────────────────────────
+// ── Tabela de Gestão ─────────────────────────────────────────
 function configurarGestao() {
-  document.getElementById('gestao-busca').addEventListener('input', renderizarTabela);
-  document.getElementById('gestao-filtro-tipo').addEventListener('change', renderizarTabela);
+  document.getElementById('gestao-busca')?.addEventListener('input', renderizarTabela);
+  document.getElementById('gestao-filtro-tipo')?.addEventListener('change', renderizarTabela);
 }
 
 function renderizarTabela() {
   const tbody   = document.getElementById('tabela-body');
+  if (!tbody) return;
+  
   const busca   = document.getElementById('gestao-busca').value.toLowerCase();
   const tipoFil = document.getElementById('gestao-filtro-tipo').value;
 
   let eventos = todosEventos;
-
   if (tipoFil) eventos = eventos.filter(e => e.tipo === tipoFil);
-  if (busca)   eventos = eventos.filter(e =>
-    e.titulo.toLowerCase().includes(busca)  ||
-    e.nome.toLowerCase().includes(busca)    ||
-    e.curso.toLowerCase().includes(busca)   ||
-    e.local1.toLowerCase().includes(busca)
-  );
+  if (busca)   eventos = eventos.filter(e => e.titulo.toLowerCase().includes(busca) || e.nome.toLowerCase().includes(busca));
 
   if (eventos.length === 0) {
     tbody.innerHTML = `<tr><td colspan="8" class="tabela-vazio">Nenhum evento encontrado.</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = eventos.map(e => `
+  tbody.innerHTML = eventos.map(e => {
+    const podeEditar = sessao?.tipo === 'Gestão' || e.criado_por_email === sessao?.email;
+
+    return `
     <tr>
       <td><span class="tabela-tipo ${e.tipo}">${e.tipo}</span></td>
       <td><strong>${escapar(e.titulo)}</strong></td>
-      <td>${formatarData(e.startdate)}${e.enddate !== e.startdate ? '<br><small style="color:var(--muted)">até ' + formatarData(e.enddate) + '</small>' : ''}</td>
-      <td>${e.startime.slice(0,5)} – ${e.endtime.slice(0,5)}</td>
+      <td>${formatarData(e.startdate)}</td>
+      <td>${e.startime.slice(0, 5)} – ${e.endtime.slice(0, 5)}</td>
       <td>${escapar(e.local1)}</td>
       <td>${escapar(e.nome)}</td>
-      <td>${escapar(e.curso)}<br><small style="color:var(--muted)">${escapar(e.ano)} · ${escapar(e.base)}</small></td>
+      <td>${escapar(e.curso)}</td>
       <td>
         <div class="tabela-acoes">
-          <button class="btn-editar" data-id="${e.id}">✏ Editar</button>
-          <button class="btn-deletar" data-id="${e.id}">✕</button>
+          ${podeEditar ? `
+            <button class="btn-editar" data-id="${e.id}">✏ Editar</button>
+            <button class="btn-deletar" data-id="${e.id}">✕</button>
+          ` : '<small style="color:gray">Apenas leitura</small>'}
         </div>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 
-  tbody.querySelectorAll('.btn-editar').forEach(btn => {
-    btn.addEventListener('click', () => abrirEdicao(Number(btn.dataset.id)));
-  });
-  tbody.querySelectorAll('.btn-deletar').forEach(btn => {
-    btn.addEventListener('click', () => deletarEvento(Number(btn.dataset.id)));
-  });
+  tbody.querySelectorAll('.btn-editar').forEach(btn => btn.addEventListener('click', () => abrirEdicao(Number(btn.dataset.id))));
+  tbody.querySelectorAll('.btn-deletar').forEach(btn => btn.addEventListener('click', () => deletarEvento(Number(btn.dataset.id))));
 }
 
-// ── EDITAR EVENTO ────────────────────────────────────────────
+// ── Edição e Exclusão ────────────────────────────────────────
 function abrirEdicao(id) {
   const ev = todosEventos.find(e => e.id === id);
   if (!ev) return;
-
   editandoId = id;
 
-  // Preenche o formulário com os dados do evento
   document.getElementById('evento-id').value  = ev.id;
   document.getElementById('titulo').value     = ev.titulo;
   document.getElementById('startdate').value  = ev.startdate.split('T')[0];
   document.getElementById('enddate').value    = ev.enddate.split('T')[0];
-  document.getElementById('startime').value   = ev.startime.slice(0,5);
-  document.getElementById('endtime').value    = ev.endtime.slice(0,5);
+  document.getElementById('startime').value   = ev.startime.slice(0, 5);
+  document.getElementById('endtime').value    = ev.endtime.slice(0, 5);
   document.getElementById('local1').value     = ev.local1;
   document.getElementById('nome').value       = ev.nome;
   document.getElementById('base').value       = ev.base;
@@ -322,78 +319,52 @@ function abrirEdicao(id) {
   document.getElementById('descricao').value  = ev.info_event;
   document.getElementById('color').value      = ev.color;
 
-  // Marca o radio do tipo
-  document.querySelectorAll('.radio-tipo').forEach(r => {
-    r.checked = r.value === ev.tipo;
-  });
-
-  // Atualiza a borda do drawer
-  const drawer = document.getElementById('drawer');
-  drawer.style.borderLeftColor = CORES[ev.tipo] ?? '';
-
-  // Muda o título e botão
-  document.getElementById('drawer-titulo').textContent  = 'Editar Evento';
-  document.getElementById('btn-confirmar').textContent  = 'Salvar Alterações';
+  document.querySelectorAll('.radio-tipo').forEach(r => r.checked = (r.value === ev.tipo));
+  document.getElementById('drawer').style.borderLeftColor = CORES[ev.tipo] ?? '';
+  document.getElementById('drawer-titulo').textContent = 'Editar Evento';
+  document.getElementById('btn-confirmar').textContent = 'Salvar Alterações';
 
   abrirDrawer();
 }
 
-// ── DELETAR ──────────────────────────────────────────────────
 async function deletarEvento(id) {
-  if (!confirm('Excluir este evento?')) return;
+  if (!confirm('Excluir este evento permanentemente?')) return;
   try {
-    const res  = await fetch(`/api/eventos/${id}`, { method: 'DELETE' });
+    const res = await fetch(`/api/eventos/${id}`, { method: 'DELETE' });
     const data = await res.json();
     if (data.sucesso) {
       todosEventos = todosEventos.filter(e => e.id !== id);
-      renderizarCalendario();
-      renderizarPainel();
-      renderizarTabela();
+      renderizarCalendario(); renderizarPainel(); renderizarTabela();
       toast('Evento excluído.', 'sucesso');
     } else {
       toast(data.erro || 'Erro ao excluir.', 'erro');
     }
-  } catch {
-    toast('Erro de conexão.', 'erro');
-  }
+  } catch { toast('Erro de conexão.', 'erro'); }
 }
 
-// ── DRAWER ───────────────────────────────────────────────────
+// ── Drawer e Formulário ──────────────────────────────────────
 function abrirDrawer() {
-  const drawer  = document.getElementById('drawer');
+  const drawer = document.getElementById('drawer');
   const overlay = document.getElementById('overlay');
   drawer.hidden = false;
-  requestAnimationFrame(() => {
-    drawer.classList.add('aberto');
-    overlay.classList.add('ativo');
-  });
+  setTimeout(() => { drawer.classList.add('aberto'); overlay.classList.add('ativo'); }, 10);
 }
 
 function fecharDrawer() {
-  const drawer  = document.getElementById('drawer');
+  const drawer = document.getElementById('drawer');
   const overlay = document.getElementById('overlay');
   drawer.classList.remove('aberto');
   overlay.classList.remove('ativo');
   setTimeout(() => { drawer.hidden = true; }, 400);
-
-  // Reset
   document.getElementById('form-evento').reset();
-  document.getElementById('evento-id').value = '';
-  document.getElementById('color').value     = '';
-  drawer.style.borderLeftColor               = '';
-  document.getElementById('drawer-titulo').textContent = 'Cadastrar Evento';
-  document.getElementById('btn-confirmar').textContent = 'Confirmar';
   editandoId = null;
 }
 
 function configurarDrawer() {
-  document.getElementById('btn-abrir-form')?.addEventListener('click', () => {
-    editandoId = null;
-    abrirDrawer();
-  });
-  document.getElementById('btn-fechar-form').addEventListener('click', fecharDrawer);
-  document.getElementById('btn-cancelar').addEventListener('click', fecharDrawer);
-  document.getElementById('overlay').addEventListener('click', fecharDrawer);
+  document.getElementById('btn-abrir-form')?.addEventListener('click', abrirDrawer);
+  document.getElementById('btn-fechar-form')?.addEventListener('click', fecharDrawer);
+  document.getElementById('btn-cancelar')?.addEventListener('click', fecharDrawer);
+  document.getElementById('overlay')?.addEventListener('click', fecharDrawer);
 
   document.querySelectorAll('.radio-tipo').forEach(r => {
     r.addEventListener('change', () => {
@@ -403,82 +374,50 @@ function configurarDrawer() {
   });
 }
 
-// ── FORMULÁRIO SUBMIT ────────────────────────────────────────
 function configurarFormulario() {
   const form = document.getElementById('form-evento');
-
-  form.addEventListener('submit', async (e) => {
+  form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('btn-confirmar');
-    btn.disabled    = true;
-    btn.textContent = 'Salvando…';
+    btn.disabled = true; btn.textContent = 'Salvando...';
 
     const dados = Object.fromEntries(new FormData(form).entries());
     const isEdicao = !!editandoId;
 
     try {
-      const res = await fetch(
-        isEdicao ? `/api/eventos/${editandoId}` : '/api/eventos',
-        {
-          method:  isEdicao ? 'PUT' : 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify(dados),
-        }
-      );
+      const res = await fetch(isEdicao ? `/api/eventos/${editandoId}` : '/api/eventos', {
+        method: isEdicao ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dados),
+      });
       const data = await res.json();
 
       if (data.sucesso) {
-        toast(isEdicao ? 'Evento atualizado!' : 'Evento cadastrado!', 'sucesso');
-        fecharDrawer();
-        await carregarEventos();
+        toast(isEdicao ? 'Atualizado!' : 'Cadastrado!', 'sucesso');
+        fecharDrawer(); await carregarEventos();
       } else {
         toast(data.erro || 'Erro ao salvar.', 'erro');
       }
-    } catch {
-      toast('Erro de conexão.', 'erro');
-    } finally {
-      btn.disabled    = false;
-      btn.textContent = editandoId ? 'Salvar Alterações' : 'Confirmar';
-    }
+    } catch { toast('Erro de conexão.', 'erro'); }
+    finally { btn.disabled = false; btn.textContent = isEdicao ? 'Salvar Alterações' : 'Confirmar'; }
   });
 }
 
-// ── UTILITÁRIOS ──────────────────────────────────────────────
-function isMesmoDia(a, b) {
-  return a.getFullYear() === b.getFullYear() &&
-         a.getMonth()    === b.getMonth()    &&
-         a.getDate()     === b.getDate();
-}
-
-function isoDate(data) {
-  return `${data.getFullYear()}-${String(data.getMonth()+1).padStart(2,'0')}-${String(data.getDate()).padStart(2,'0')}`;
-}
-
-function formatarData(str) {
-  if (!str) return '';
-  const [ano, mes, dia] = str.split('T')[0].split('-');
-  return `${dia}/${mes}/${ano}`;
-}
-
+// ── Utilitários ──────────────────────────────────────────────
+function isMesmoDia(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
+function isoDate(data) { return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}`; }
+function formatarData(str) { if (!str) return ''; const [a, m, d] = str.split('T')[0].split('-'); return `${d}/${m}/${a}`; }
 function atualizarDataHoje() {
   const el = document.getElementById('data-hoje');
-  if (el) el.textContent = new Date().toLocaleDateString('pt-BR',
-    { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  if (el) el.textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
+function escapar(str) { return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
-function escapar(str) {
-  return String(str ?? '')
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-function toast(mensagem, tipo = 'info') {
+function toast(msg, tipo = 'info') {
   const t = document.createElement('div');
   t.className = `toast toast-${tipo}`;
-  t.textContent = mensagem;
+  t.textContent = msg;
   document.body.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('visivel'));
-  setTimeout(() => {
-    t.classList.remove('visivel');
-    t.addEventListener('transitionend', () => t.remove());
-  }, 3500);
+  setTimeout(() => t.classList.add('visivel'), 10);
+  setTimeout(() => { t.classList.remove('visivel'); t.addEventListener('transitionend', () => t.remove()); }, 3000);
 }
